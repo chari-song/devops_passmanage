@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>密码开放</title>
+    <link href="/static/img/title.png" rel="icon">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <style>
+		table{
+			margin-left: 3px;
+			border-spacing:10px 20px;
+		}
+		#t1 tr{
+			height: 70px;
+			width: 120px;
+			font-size: larger;
+		}
+		#t1 tr td{
+			width: 150px;
+		}
+	</style>
+	<script>
+        function ch(id){
+            if(id=="batch"){
+              eval("tr2.style.display=\"none\";");
+            }
+            else if(id=="custom"){
+              eval("tr2.style.display=\"\";");
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="panel panel-info" style="height: 800px;">
+        <div class="panel-heading">
+            <h3 class="panel-title">欢迎管理员sccl</h3>
+        </div>
+        <div class="panel-body">
+            <div class="btn-group">
+                <form action="/remote/dataform" method="post">
+                    <table id="t1">
+                        <div>
+                            <tr id="tr2" style="height:90px;">
+                                <td>
+                                    <p>请输入IP:</p>
+                                </td>
+                                <td>
+                                    <!-- <input name="IP" class="form-control"  style="height: 90px;" placeholder="多个IP请用','间隔" />-->
+                                    <textarea name="IP" class="form-control"  style="height: 150px;width: 330px;" placeholder="请输入IP地址"></textarea>
+                                </td>
+                            </tr>
+                            <tr style="margin-top: 10px;">
+                                <td></td>
+                                <td>
+                                    <span  class="col-sm-5" style="font-size:13px;color: red">{{ ip_error_msg }}</span>
+                                </td>
+                            </tr>
+                            <tr  style="margin-top: 10px;">
+                                <td>
+                                    <p>起始时间：</p>
+                                </td>
+                                <td>
+                                    <input name="date1" type="text" value="" placeholder="日期(yyyy-mm-dd)"/>
+                                    <input name="time1" type="text" value="" placeholder="时间(HH:MM)"/>
+                                </td>
+                            </tr>
+                            <tr  style="margin-top: 10px;">
+                                <td>
+                                    <p>结束时间：</p>
+                                </td>
+                                <td>
+                                    <input name="date2" type="text" value="" placeholder="日期(yyyy-mm-dd)"/>
+                                    <input name="time2" type="text" value="" placeholder="时间(HH:MM)"/>
+                                </td>
+                            </tr>
+                            <tr style="margin-top: 10px;">
+                                <td></td>
+                                <td>
+                                    <span  class="col-sm-5" style="font-size:13px;color: red">{{ day_error_msg }}</span>
+                                </td>
+                            </tr>
+                            <tr  style="margin-top: 5px;">
+                                <td>
+                                    <p>持续时间：</p>
+                                </td>
+                                <td>
+                                    <input name="dur" type="text"  placeholder="单位：小时" value=""/>
+                                </td>
+                            </tr>
+                            <tr style="margin-top: 10px;">
+                                <td></td>
+                                <td>
+                                    <span  class="col-sm-5" style="font-size:13px;color: red">{{ dur_error_msg }}</span>
+                                </td>
+                            </tr>
+                        </div>
+                        <tr>
+                            <td colspan="2"><button id="b1" type="submit" class="btn btn-success btn-lg btn-block">确认修改</button></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div class="panel panel-primary" style="width: 40%;height: 60%;float: right;margin-right: 5%;">
+                <form action="/remote/estend" method="post" class="form-horizontal f1">
+                    <table class="table table-bordered">
+                        <caption>等待开放的服务器<a href="/remote/pwdres">刷新</a></caption>
+                        <thead>
+                            <tr>
+                                <th>ip</th>
+                                <th>预定时间</th>
+                                <th>开放时长</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{% for i in est_ip %}<br><input name="est_ip" type="checkbox" value="{{ i }}" placeholder="test"/>{{ i }} {% endfor %}</td>
+                                <td>{% for i in est_dur %} <br>{{ i }} {% endfor %}</td>
+                                <td>{% for i in est_long %} <br>{{ i }} {% endfor %}</td>
+                                <td><button type="submit" class="btn btn-primary btn-lg btn-block">关闭</button></td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>登录密码</th>
+                                <!--<td colspan="3">{{ est_password }}</td> -->
+                                <td colspan="3">{% for i in est_password %} <br><input name="est_paswd" type="checkbox" value="{{ i }}" placeholder="test3"/>{{ i }} {% endfor %}</td>
+                                <!--<td>{% for i in now_password %} <br><input name="now_paswd" type="checkbox" value="{{ i }}" placeholder="test2"/>{{ i }} {% endfor %}</td>-->
+                            </tr>
+                        </thead>
+                    </table>
+                </form>
+                <form action="/remote/nowend" method="post" class="form-horizontal f1">
+                    <table class="table table-bordered">
+                        <caption>已经开放的服务器</caption>
+                        <thead>
+                            <tr>
+                                <th>ip</th>
+                                <th>剩余时长</th>
+                                <th>登录密码</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{% for i in now_ip %}<br><input name="now_ip" type="checkbox" value="{{ i }}" placeholder="test"/>{{ i }} {% endfor %}</td>
+                                <td>{% for i in now_dur %} <br><input name="now_tim" type="checkbox" value="{{ i }}" placeholder="test1"/>{{ i }} {% endfor %}</td>
+                                <td>{% for i in now_password %} <br><input name="now_paswd" type="checkbox" value="{{ i }}" placeholder="test2"/>{{ i }} {% endfor %}</td>
+                                <td><button type="submit" class="btn btn-primary btn-lg btn-block">关闭</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+                <button id="b2" type="submit" class="btn btn-success btn-lg btn-block" onclick="window.location.href='http://192.168.6.134:59123/remote/index'">运维管理</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

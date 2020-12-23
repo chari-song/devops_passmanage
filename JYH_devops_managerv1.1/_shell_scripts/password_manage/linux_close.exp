@@ -1,0 +1,13 @@
+#!/usr/bin/expect
+set user "root"
+set host [lindex $argv 0]
+spawn ssh -p 59135 $user@$host
+#expect "*yes/no*"
+#send "yes\r"
+# 立即关闭linux服务器密码登录
+expect "*]#"
+send "sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config;systemctl restart sshd\r"
+send "atq\|awk '{print \$1}'|xargs atrm\r"
+expect "*]#"
+send "exit\r"
+interact

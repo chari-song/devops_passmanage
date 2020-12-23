@@ -1,0 +1,13 @@
+#!/usr/bin/expect
+# 定义传入的参数
+set user "controller"
+set host [lindex $argv 0]
+set pwd [lindex $argv 3]
+spawn ssh -p 59135 $user@$host
+
+# 创建windows定时任务关闭远程桌面登录服务
+expect "*>"
+send "net start TermService /y \r"
+expect "*>"
+send "exit\r"
+interact

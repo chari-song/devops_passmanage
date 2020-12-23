@@ -1,0 +1,27 @@
+#!/usr/bin/expect
+# 定义传入的参数
+# end_day为关闭远程桌面登录服务器的日期
+# end_time为关闭远程桌面登录服务器的时间
+# pwd为本次开启远程登录服务器的密码
+set user "controller"
+set host [lindex $argv 0]
+set end_day [lindex $argv 1]
+set end_time [lindex $argv 2]
+set pwd [lindex $argv 3]
+spawn ssh -p 59135 $user@$host
+expect "*yes/no*"
+send "yes\r"
+# 立即启动windows远程桌面登录服务
+expect "*>"
+send "net start TermService\r"
+
+# 修改远程登录密码
+expect "*>"
+send "net user controller $pwd\r"
+
+# 创建windows定时任务关闭远程桌面登录服务
+expect "*>"
+send "schtasks /create /tn desktopstop /tr \"net stop TermService /y\" /sc once /sd $end_day /st $end_time /f /RU SYSTEM /NP\r"
+expect "*>"
+send "exit\r"
+interact

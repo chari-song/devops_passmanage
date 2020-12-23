@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajax提交Form验证</title>
+
+</head>
+<body>
+
+    <!--<form action="/ajaxForm/" method="post" id="fm">-->
+        <!--{% csrf_token %}-->
+        <!--<p>username:{{ user.username }}<span id="username_span"></span></p>-->
+        <!--<p>gender:{{ user.gender }}<span id="gender_span"></span></p>-->
+        <!--<p><input type="button" value="Ajax提交" id="fm_submit"></p>-->
+    <!--</form>-->
+    <form action="/remote/aja" method="post" id="fm">
+        {% csrf_token %}
+        <p>请输入IP: </p>
+		<textarea name="IP" id="IP" class="form-control"  style="height: 100px;width: 200px;" placeholder="多个IP请用回车或空格间隔"></textarea>
+        <p>预约开放时间：<input name="date1" type="date" value="" /> <input name="time1" type="time" value="" /></p>
+        <p>开放持续时间：<input name="dur" type="text" placeholder="单位：小时" value="" /></p>
+        <p><input type="button" value="提交" id="fm_submit"></p>
+    </form>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script>
+
+        $(function(){
+            $("#fm_submit").click(function(){
+                $.ajax({
+                    url:"/ajaxForm/",
+                    type:"post",
+                    dataType:"JSON",
+                    data:$("#fm").serialize(),
+                    success:function(args){
+                        if (args.status == "OK"){
+                            window.location.href("Http://www.baidu.com")
+                        }else if(args.status=="NG"){
+                            console.log(args.msg)
+                            $("#username_span").html(args.msg.username[0])
+                        }
+                    }
+                })
+             })
+        })
+
+    </script>
+
+</body>
+</html>

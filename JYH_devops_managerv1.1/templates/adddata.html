@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>添加服务器</title>
+</head>
+<body>
+     <form action="/remote/adddata" method="post" id="fm">
+         <table id="t1">
+             <div>
+                 <tr id="tr2" style="height:90px;">
+                     <td>
+                         <p>请输入IP:</p>
+                     </td>
+                     <td>
+                         <!-- <input name="IP" class="form-control"  style="height: 90px;" placeholder="多个IP请用','间隔" />-->
+                         <textarea name="IP" class="form-control"></textarea>
+                     </td>
+                 </tr>
+                 <tr  style="margin-top: 10px;">
+                     <td>
+                         <p>起始时间：</p>
+                     </td>
+                     <td>
+                         <input name="date1" type="text" value="" placeholder="日期(yyyy-mm-dd)"/>
+                         <input name="time1" type="text" value="" placeholder="时间(HH:MM:SS)"/>
+                     </td>
+                 </tr>
+             </div>
+         </table>
+        {% csrf_token %}
+         <p>请输入IP地址：<input name="IP" id="IP" type="text" value="" /></p>
+         <P>请输入区域：<input name="area" id="area" type="text" value="" placeholder="互联网区/政务外网区"/></p>
+         <P>请输入服务器环境：<input name="svname" id="svname" type="text" value="" placeholder="生产/测试环境"/></p>
+         <p>请输入服务器类型(1为Linux,2为windows)：<input name="server_type" id="server_type" type="text" placeholder="1/2" value="" /></p>
+         <p>请输入厂商名称：<input name="company" id="company" type="text" placeholder="开普/创立" value="" /></p>
+         <p>请输入创建日期：<input name="day_time" id="day_time" type="text" placeholder="2020-01-01 00:00:00" value="" /></p>
+         <p><input type="submit" value="添加" id="fm_submit"></p>
+     </form>
+</body>
+</html>

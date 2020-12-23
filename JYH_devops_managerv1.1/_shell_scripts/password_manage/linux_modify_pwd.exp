@@ -1,0 +1,13 @@
+#!/usr/bin/expect
+set user "root"
+set host [lindex $argv 0]
+set pwd [lindex $argv 1]
+spawn ssh -p 59135 $user@$host
+#expect "*yes/no*"
+#send "yes\r"
+# 立即关闭linux服务器密码登录
+expect "*]#"
+send "echo $pwd | passwd --stdin root\r"
+expect "*]#"
+send "exit\r"
+interact

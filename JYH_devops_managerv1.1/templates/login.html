@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+ <html lang="en">
+     <head>
+         <meta charset="UTF-8">
+         <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
+         <title>login</title>
+     </head>
+     <body>
+         <form action="/auth/" method="post" id="fm">
+            {% csrf_token %}
+            <p>请输入IP: </p>
+            <textarea name="IP" id="IP" class="form-control"  style="height: 100px;width: 200px;" placeholder="多个IP请用回车或空格间隔"></textarea>
+            <p>预约开放时间：<input name="date1" id="date1" type="date" value="" /> <input name="time1" id="time1" type="time" value="" /></p>
+            <p>开放持续时间：<input name="dur" id="dur" type="text" placeholder="单位：小时" value="" /></p>
+            <p><input type="button" value="提交" id="fm_submit"></p>
+        </form>
+     </body>
+     <script>
+         //以post方式请求(csrf)
+         $(function () {
+             $('#fm_submit').click(function () {
+                 $.ajax({
+                     url: "/auth/",//请求路径
+                     type: 'post',            //请求方式
+                     data: {                  //请求数据(post请求的csrf认证键值对固定)
+                         IP: $('#IP').val(),
+                         date1: $('#date1').val(),
+                         date1: $('#date1').val(),
+                         time1: $('#time1').val(),
+                         dur: $('#dur').val,
+                     },
+                     success: function (response) {//请求回调函数
+                         if (response == 1) {
+                             window.location.href = "/index/"
+                         } else {
+                             ("#status").text('this is test')
+                         }
+                     }
+                 })
+             })
+         })
+     </script>
+ </html>

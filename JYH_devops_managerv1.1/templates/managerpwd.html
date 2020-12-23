@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>密码远程管理</title>
+    <link href="/static/img/title.png" rel="icon">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <style>
+        /*table {margin: auto;} body{text-align: center;}*/
+		table{
+
+			margin-left: 3px;
+			border-spacing:10px 20px;
+		}
+		#t1 tr{
+			height: 70px;
+			width: 120px;
+			font-size: larger;
+		}
+		#t1 tr td{
+			width: 150px;
+		}
+	</style>
+	<script>
+        function ch(id){
+            if(id=="batch"){
+              eval("tr2.style.display=\"none\";");
+            }
+            else if(id=="custom"){
+              eval("tr2.style.display=\"\";");
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="panel panel-info" style="height: 800px;">
+        <div class="panel-heading">
+            <h3 class="panel-title">欢迎管理员sccl</h3>
+        </div>
+        <div class="panel-body">
+            <div class="btn-group">
+                <form action="/remote/pwdclose" method="post">
+                    <table id="t1">
+                        <div>
+                            <tr id="tr2" style="height:90px;">
+                                <td>
+                                    <p>请输入关闭远程IP:</p>
+                                </td>
+                                <td>
+                                    <!-- <input name="IP" class="form-control"  style="height: 90px;" placeholder="多个IP请用','间隔" />-->
+                                    <textarea name="IP" class="form-control"  style="height: 150px;width: 330px;" placeholder="已空格或回车分割默认为所有服务器"></textarea>
+                                </td>
+                            </tr>
+                            <tr style="margin-top: 10px;">
+                                <td></td>
+                                <td>
+                                    <span  class="col-sm-5" style="font-size:13px;color: red">{{ ip_error_msg }}</span>
+                                </td>
+                            </tr>
+                        </div>
+                        <tr>
+                            <td colspan="2"><button id="b1" type="submit" class="btn btn-success btn-lg btn-block">确认关闭</button></td>
+                            <td><span  class="col-sm-5" style="font-size:13px;color: red">{{ ip_error_msg }}</span></td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div class="panel panel-primary" style="width: 40%;height: 60%;float: right;margin-right: 5%;">
+                <form action="/remote/pwdmodify" method="post" class="form-horizontal f1">
+                    <table id="t5">
+                        <caption>修改后的文件<a href="/remote/">下载</a></caption>
+                        <div>
+                            <tr id="td2" style="height: 90px">
+                                <td>
+                                    <p>请输入修改密码IP:</p>
+                                </td>
+                                <td>
+                                    <textarea name="IP" class="form-control"  style="height: 150px;width: 330px;" placeholder="已空格或回车分割默认为所有服务器"></textarea>
+                                </td>
+                            </tr>
+                            <tr style="margin-top: 10px;">
+                                <td></td>
+                                <td>
+                                    <span  class="col-sm-5" style="font-size:13px;color: red">{{ ip_error_msg }}</span>
+                                </td>
+                            </tr>
+                        </div>
+                        <tr>
+                            <td colspan="3" align="center"><button type="submit" class="btn btn-primary btn-lg btn-block">确认修改</button></td>
+                            <td><span  class="col-sm-5" style="font-size:13px;color: red">{{ ip_error_msg }}</span></td>
+                        </tr>
+                    </table>
+                </form>
+                <button id="b2" type="submit" class="btn btn-success btn-lg btn-block" onclick="window.location.href='http://192.168.6.134:59123/remote/index'">运维管理</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

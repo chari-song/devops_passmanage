@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>登录运维管理平台</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/img/title.png" rel="icon">
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <style>
+        .f1{
+            width:400px;
+            height:300px;
+            margin:auto;
+        }
+        .d1{
+            margin-top:20px;
+        }
+        .d3{
+            margin-left: -20px;
+        }
+        .d4{
+            margin-left: 25px;
+        }
+        #div1{
+            margin-top: 2%;
+        }
+        #div2{
+            margin-left: 12%;
+        }
+    </style>
+    <script type="text/javascript"></script>
+</head>
+<body>
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <div id="div1">
+        <div id="div2">
+            <img src="/static/img/login.png" alt="" class="img-rounded"/>
+        </div>
+        <form method="post" class="form-horizontal f1">
+            <div class="form-horizontal f1">
+                <div class="form-group d1">
+                    <span id="sp1" class="col-sm-8"><p style="font-size: 16px;color: blue" >电子政务外网运维平台（四川创立）</p></span>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名">
+                    </div>
+                    <span id="spl" class="col-sm-5"></span>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-8">
+                        <input type="password" class="form-control" id="password" name="password" >
+                    </div>
+                    <span  class="col-sm-5" style="color: red">{{ error_msg }}</span>
+                </div>
+                <button id="submit" class="btn btn-success btn-lg col-sm-8">登录</button>
+                {% csrf_token %}
+            </div>
+            <script>
+             $(function () {
+                    $('#submit').click(function () {
+                        $.ajax({
+                            url:"{% url 'login' %}",
+                            type:'post',
+                            data:{
+                                username:$('#username').val(),
+                                password:$('#password').val(),
+                                csrfmiddlewaretoken:$('input[name=csrfmiddlewaretoken]').val(),//可以直接放在headers里边
+                            },
+                            success:function (response) {
+                                console.log(response)
+                                if (response.status===1){
+                                    location.href=response.url
+                                }
+                            }
+                        })
+                    })
+                });
+            </script>
+        </form>
+        <p style="margin-left: 43%">集约化运维平台 v0.5</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+#!/usr/bin/expect
+# 定义传入的参数
+# host为修改密码的服务器
+# pwd为本次开启远程登录服务器的密码
+set user "controller"
+set host [lindex $argv 0]
+set pwd [lindex $argv 1]
+spawn ssh -p 59135 $user@$host
+# 修改远程登录密码
+expect "*yes/no*"
+send "yes\r"
+expect "*>"
+send "net user controller $pwd\r"
+expect "*>"
+send "exit\r"
+interact

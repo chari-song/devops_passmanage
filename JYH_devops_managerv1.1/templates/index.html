@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8" />
+    <title>自动运维平台</title>
+    <link href="/static/img/title.png" rel="icon">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+</head>
+<script type="text/javascript">
+    function ch(){
+        alert("新加功能 \n一，融合政务外网区和互联网区，现在可选择开放位置 \n二，添加预约开放功能 \n三，添加已开放和等待开放服务器ip，剩余时间 \n功能优化 \n一，将开放服务器信息保存至数据库取代之前的保存为文件形式\n二，解决重复申请引起的提前回收问题，现在重复申请取最大的时间\n三，底层代码操翻重做，提高稳定性")
+    }
+</script>
+<body>
+    <div class="panel panel-success">
+        <div class="panel-heading">
+            <h3 class="panel-title">欢迎管理员sccl      <button type="button" class="btn btn-success btn-lg " onclick="ch()">更新公告</button> </h3>
+        </div>
+        <div class="panel-body">
+            <p>
+            <p style="color:black;fontsize:16px">已上线：</p>
+            <button type="button" class="btn btn-info btn-lg " onclick="javascrtpt:window.location.href='http://125.64.4.218/admin/'">资产管理平台</button>
+            <button type="button" class="btn btn-danger btn-lg " onclick="javascrtpt:window.location.href='http://172.18.80.22/zabbix'">Zabbix监控平台</button>
+            <button type="button" class="btn btn-warning btn-lg " onclick="javascrtpt:window.location.href='http://172.18.80.22:59125/remote/pwdres'">服务器认证</button>
+            <button type="button" class="btn btn-info btn-lg " onclick="javascrtpt:window.location.href='http://172.18.80.22:59125/remote/pwdclose'">密码管理</button>
+            <hr style="color:gray"/>
+            <p style="color:gray;fontsize:16px">即将上线：</p>
+            <button type="button" class="btn btn-info btn-lg " onclick="window.location.href='/imp/fs?method=newpass'" disabled="disabled">防篡改</button>
+            <button type="button" class="btn btn-success btn-lg " onclick="window.location.href='/imp/fs?method=newpass'" disabled="disabled">紧急页面删除</button>
+            <button type="button" class="btn btn-warning btn-lg " onclick="window.location.href='/imp/fs?method=newpass'" disabled="disabled">密码系统管理</button>
+            <button type="button" class="btn btn-danger btn-lg " onclick="window.location.href='/imp/fs?method=urgent'" disabled="disabled">紧急回收权限</button>
+            <button type="button" class="btn btn-primary btn-lg " disabled="disabled">现网巡检</button>
+            <button type="button" class="btn btn-info btn-lg " disabled="disabled">os本地快照配置</button>
+        </div>
+    </div>
+</body>
+</html>

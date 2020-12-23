@@ -1,0 +1,286 @@
+from django.urls import reverse
+
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, request, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.base import View
+from . import views_timerpass as tp
+from . import views_passwddb as pm
+from datetime import datetime
+import datetime
+from threading import Thread
+import re
+import time
+import os
+
+
+def est_open_long(ip_add, start_time, long, pwd):  # 输入开放时长函数
+    open_long = float(long) * 3600
+    est_open_time = datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')  # 获取密码开放时间日期
+    est_start_day = (datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')).strftime("%Y-%m-%d")
+    est_start_time = (datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')).strftime("%H:%M")
+    est_end_day = (est_open_time + datetime.timedelta(hours=float(long))).strftime("%Y-%m-%d")
+    est_end_time = (est_open_time + datetime.timedelta(hours=float(long))).strftime("%H:%M")
+    print(est_start_day, est_start_time, "\n", est_end_day, est_end_time)
+    server_type = pm.select_query(ip_add)  # 查询服务器系统 1为Linux 2为windows
+    area = pm.select_query_name(ip_add)  # 获取IP地址所在的环境(测试/生产环境)
+    pm.est_passwd_manage(ip_add, area, pwd, start_time)  # 更新密码保存数据库
+    pm.estimate_open(ip_add, server_type, pwd, est_open_time, long)  # 插入预计开放密码表
+    est_time = int((est_open_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码开放时间换成秒，定时任务
+    est_time1 = int((est_time + open_long))  # 当前时间到密码关闭时间换成秒
+    est_del = Thread(target=tp.timer_estimate_pwd, args=(est_time, ip_add), name='Thread-est')  # 删除预计开放数据库密码表
+    est_del.start()
+    now_create = Thread(target=tp.timer_now_pwd, args=(est_time, ip_add, server_type, pwd, long))  # 插入立即开放数据库密码表
+    now_create.start()
+    now_del = Thread(target=tp.timer_now_pwddel, args=(est_time1, ip_add))  # 删除立即开放数据库密码表
+    now_del.start()
+    if server_type == 2:
+        print("预计开启windows", ip_add)
+        cmd = "/usr/bin/expect _shell_scripts/password_manage/estimate_win_open_close.exp %s %s %s %s %s %s" % (
+            ip_add, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        os.system(cmd)
+    else:
+        # 获取Linux预计开启关闭的时间
+        print("预计开启Linux", ip_add)
+        cmd = "/usr/bin/expect _shell_scripts/password_manage/estimate_linux_open_close.exp %s %s %s %s %s %s" % (
+            ip_add, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        os.system(cmd)
+
+
+def now_open_long(ip_add, long, pwd):  # 输入开放时长函数
+    open_long = float(long) * 3600
+    server_type = pm.select_query(ip_add)  # 查询服务器系统 1为Linux 2为windows
+    area = pm.select_query_name(ip_add)  # 获取IP地址所在的环境(测试/生产环境)
+    now_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    pm.est_passwd_manage(ip_add, area, pwd, now_time)  # 更新密码保存数据库
+    now_end_day = (datetime.datetime.now() + datetime.timedelta(hours=float(long))).strftime("%Y-%m-%d")
+    now_end_time = (datetime.datetime.now() + datetime.timedelta(hours=float(long))).strftime("%H:%M")
+    pm.now_open(ip_add, server_type, pwd, long)  # 插入立即开放密码表
+    now_del = Thread(target=tp.timer_now_pwddel, args=(open_long, ip_add))  # 删除立即开放数据库密码表
+    now_del.start()
+    if server_type == 2:
+        print("立即开启windows远程登录", ip_add)
+        tp.now_termservice(ip_add, now_end_day, now_end_time, pwd)
+    else:
+        print("立即开启Linux远程登录", ip_add, now_end_day, now_end_time, pwd)  # 修改密码同时开启远程登录
+        tp.now_passwd(ip_add, now_end_day, now_end_time, pwd)
+
+
+def est_open_timea(ip_add, start_time, end_time, pwd):  # 输入结束时间函数
+    est_open_time = datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')  # 获取密码开放时间日期
+    est_start_day = (datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')).strftime("%Y-%m-%d")
+    est_start_time = (datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')).strftime("%H:%M")
+    est_close_time = datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M')  # 获取密码关闭时间日期
+    est_end_day = (datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M')).strftime("%Y-%m-%d")
+    est_end_time = (datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M')).strftime("%H:%M")
+    long = float((est_close_time - est_open_time).total_seconds() / 3600)  # 计算开放时长
+    print(est_start_day, est_start_time, "\n", est_end_day, est_end_time)
+    server_type = pm.select_query(ip_add)  # 查询服务器系统 1为Linux 2为windows
+    area = pm.select_query_name(ip_add)  # 获取IP地址所在的环境(测试/生产环境)
+    pm.est_passwd_manage(ip_add, area, pwd, start_time)  # 更新密码保存数据库
+    pm.estimate_open(ip_add, server_type, pwd, est_open_time, long)  # 插入预计开放密码表
+    est_time = int(
+        (est_open_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码开放时间换成秒
+    est_time1 = int(
+        (est_close_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码关闭时间换成秒
+    est_del = Thread(target=tp.timer_estimate_pwd, args=(est_time, ip_add), name='Thread-est')  # 删除预计开放数据库密码表
+    est_del.start()
+    now_create = Thread(target=tp.timer_now_pwd, args=(est_time, ip_add, server_type, pwd, long))  # 插入立即开放数据库密码表
+    now_create.start()
+    now_del = Thread(target=tp.timer_now_pwddel, args=(est_time1, ip_add))  # 删除立即开放数据库密码表
+    now_del.start()
+    if server_type == 2:
+        print("预计开启windows", ip_add)
+        cmd = "/usr/bin/expect _shell_scripts/password_manage/estimate_win_open_close.exp %s %s %s %s %s %s" % (
+            ip_add, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        os.system(cmd)
+    else:
+        # 获取Linux预计开启关闭的时间
+        print("预计开启Linux", ip_add)
+        cmd = "/usr/bin/expect _shell_scripts/password_manage/estimate_linux_open_close.exp %s %s %s %s %s %s" % (
+            ip_add, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        os.system(cmd)
+
+
+def now_open_time(ip_add, end_time, pwd):  # 输入结束时间函数
+    est_close_time = datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M')  # 获取密码关闭时间日期
+    open_long = float((est_close_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码关闭时间换成秒
+    long = open_long / 3600
+    server_type = pm.select_query(ip_add)  # 查询服务器系统 1为Linux 2为windows
+    area = pm.select_query_name(ip_add)  # 获取IP地址所在的环境(测试/生产环境)
+    now_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    pm.est_passwd_manage(ip_add, area, pwd, now_time)  # 更新密码保存数据库
+    now_end_day = (datetime.datetime.now() + datetime.timedelta(hours=float(long))).strftime("%Y-%m-%d")
+    now_end_time = (datetime.datetime.now() + datetime.timedelta(hours=float(long))).strftime("%H:%M")
+    pm.now_open(ip_add, server_type, pwd, long)  # 插入立即开放密码表
+    now_del = Thread(target=tp.timer_now_pwddel, args=(open_long, ip_add))  # 删除立即开放数据库密码表
+    now_del.start()
+    if server_type == 2:
+        print("立即开启windows远程登录", ip_add)
+        tp.now_termservice(ip_add, now_end_day, now_end_time, pwd)
+    else:
+        print("立即开启Linux远程登录", ip_add, now_end_day, now_end_time, pwd)  # 修改密码同时开启远程登录
+        tp.now_passwd(ip_add, now_end_day, now_end_time, pwd)
+
+
+
+
+
+
+
+
+
+
+
+def main(data, pwd):
+    # global open_time, est_start_day, est_start_time, est_end_day, est_end_time
+    d = data
+    compile_dur = re.compile('^(\d+(\.\d+)?)$')
+    for k, v in d.items():  # 循环判断多台服务器同时开启
+        ip_a = k
+        gain_time = v[0]  # 获取字典中的预计开放时间时间
+        server_type = pm.select_query(ip_a)  # 查询服务器系统 1为Linux 2为windows
+        area = pm.select_query_name(ip_a)  # 获取IP地址所在的环境(测试/生产环境)
+        if compile_dur.match(v[1]):  # 获取关闭时间
+            end_close_time = float(v[1]) * 3600  # 获取结束时间为持续开放的时长
+            if gain_time != " ":  # 判断是否为预计开放
+                pm.est_passwd_manage(ip_a, area, pwd, gain_time)  # 更新密码保存数据库
+                est_open_time = datetime.datetime.strptime(gain_time, '%Y-%m-%d %H:%M')  # 获取密码开放时间日期
+                # est_close_time = (est_open_time + datetime.timedelta(hours=v[1])).strftime("%Y-%m-%d %H:%M")  # 获取密码关闭时间日期
+                est_start_day = (datetime.datetime.strptime(gain_time, '%Y-%m-%d %H:%M')).strftime("%Y-%m-%d")
+                est_start_time = (datetime.datetime.strptime(gain_time, '%Y-%m-%d %H:%M')).strftime("%H:%M")
+                est_end_day = (est_open_time + datetime.timedelta(hours=float(v[1]))).strftime("%Y-%m-%d")
+                est_end_time = (est_open_time + datetime.timedelta(hours=float(v[1]))).strftime("%H:%M")
+                est_time = int(
+                    (est_open_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码开放时间换成秒
+                est_time1 = int((est_time + end_close_time))  # 当前时间到密码关闭时间换成秒
+                pm.estimate_open(ip_a, server_type, pwd, est_open_time, v[1])  # 插入预计开放密码表
+                tp.est_delete(est_time, ip_a)  # 删除预计开放数据库密码表
+                tp.now_create(est_time, ip_a, server_type, pwd, v[1])  # 插入立即开放数据库密码表
+                tp.now_delete(est_time1, ip_a)  # 删除立即开放数据库密码表
+                if server_type == 2:
+                    print("预计开启windows", ip_a)
+                    tp.estimate_termservice(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+                else:
+                    # 获取Linux预计开启关闭的时间
+                    print("预计开启Linux", ip_a)
+                    tp.estimate_passwd(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+            else:
+                pm.now_open(ip_a, server_type, pwd, v[1])  # 插入立即开放密码表
+                tp.now_delete(end_close_time, ip_a)  # 删除立即开放数据库密码表
+                # 获取密码关闭时间
+                now_end_day = (datetime.datetime.now() + datetime.timedelta(hours=float(v[1]))).strftime("%Y-%m-%d")
+                now_end_time = (datetime.datetime.now() + datetime.timedelta(hours=float(v[1]))).strftime("%H:%M")
+                if server_type == 2:
+                    print("立即开启windows远程登录", ip_a)
+                    tp.now_termservice(ip_a, now_end_day, now_end_time, pwd)
+                else:
+                    print("立即开启Linux远程登录", ip_a, now_end_day, now_end_time, pwd)  # 修改密码同时开启远程登录
+                    tp.now_passwd(ip_a, now_end_day, now_end_time, pwd)
+        else:
+            end_close_time = datetime.datetime.strptime(v[1], '%Y-%m-%d %H:%M')  # 获取关闭时间位时间日期
+            if gain_time != " ":  # 判断是否为预计开放
+                pm.est_passwd_manage(ip_a, area, pwd, gain_time)  # 更新密码保存数据库
+                est_open_time = datetime.datetime.strptime(gain_time, '%Y-%m-%d %H:%M')  # 获取密码开放时间日期
+                est_start_day = (datetime.datetime.strptime(gain_time, '%Y-%m-%d %H:%M')).strftime("%Y-%m-%d")
+                est_start_time = (datetime.datetime.strptime(gain_time, '%Y-%m-%d %H:%M')).strftime("%H:%M")
+
+                est_end_day = (datetime.datetime.strptime(v[1], '%Y-%m-%d %H:%M')).strftime("%Y-%m-%d")
+                est_end_time = (datetime.datetime.strptime(v[1], '%Y-%m-%d %H:%M')).strftime("%H:%M")
+                est_time = int(
+                    (est_open_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码开放时间换成秒
+                est_time1 = int(
+                    (end_close_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码关闭时间换成秒
+                est_time2 = float((end_close_time - est_open_time).total_seconds() / 3600)  #
+                pm.estimate_open(ip_a, server_type, pwd, est_open_time, est_time2)  # 插入预计开放密码表
+                tp.est_delete(est_time, ip_a)  # 删除预计开放数据库密码表
+                tp.now_create(est_time, ip_a, server_type, pwd, est_time2)  # 插入立即开放数据库密码表
+                tp.now_delete(est_time1, ip_a)  # 删除立即开放数据库密码表
+                if server_type == 2:
+                    print("预计开启windows", ip_a)
+                    tp.estimate_termservice(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+                else:
+                    # 获取Linux预计开启关闭的时间
+                    print("预计开启Linux", ip_a)
+                    tp.estimate_passwd(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+            else:
+                est_time1 = float(
+                    (end_close_time - datetime.datetime.now().replace(
+                        microsecond=0)).total_seconds() / 3600)  # 当前时间到密码关闭时间换成秒
+                pm.now_open(ip_a, server_type, pwd, est_time1)  # 插入立即开放密码表
+                tp.now_delete(est_time1, ip_a)  # 删除立即开放数据库密码表
+                # 获取密码关闭时间
+                now_end_day = (datetime.datetime.strptime(v[1], '%Y-%m-%d %H:%M')).strftime("%Y-%m-%d")
+                now_end_time = (datetime.datetime.strptime(v[1], '%Y-%m-%d %H:%M')).strftime("%H:%M")
+                if server_type == 2:
+                    print("立即开启windows远程登录", ip_a)
+                    tp.now_termservice(ip_a, now_end_day, now_end_time, pwd)
+                else:
+                    print("立即开启Linux远程登录", ip_a, now_end_day, now_end_time, pwd)  # 修改密码同时开启远程登录
+                    tp.now_passwd(ip_a, now_end_day, now_end_time, pwd)
+
+        # if v[1] != "":  # 判断输入的是结束时间还是开放的时长
+        #     close_time = float(v[1]) * 3600  # 获取Linux关闭远程登录时间
+        #     if gain_time != " ":  # 判断是否设置预计开放的时间，gain_time不为空则开启预计开启远程登录，为空则立即开启远程登录
+        #         pm.est_passwd_manage(ip_a, area, pwd, gain_time)  # 更新密码保存数据库
+        #         # 数据库操作，加入预计开放数据库，到时间后删除预计开放，加入到立即开放表中，直到开放结束删除立即开放表中数据
+        #         estimateopasswd_time = int(
+        #             (open_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码开放时间
+        #         nowpasswd_time = int((estimateopasswd_time + close_time))  # 当前时间到密码关闭时间
+        #         pm.estimate_open(ip_a, server_type, pwd, open_time, v[1])  # 插入预计开放密码表
+        #         tp.est_delete(estimateopasswd_time, ip_a)  # 删除预计开放数据库密码表
+        #         tp.now_create(estimateopasswd_time, ip_a, server_type, pwd, v[1])  # 插入立即开放数据库密码表
+        #         tp.now_delete(nowpasswd_time, ip_a)  # 删除立即开放数据库密码表
+        #         if server_type == 2:
+        #             print("预计开启windows", ip_a)
+        #             tp.estimate_termservice(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        #         else:
+        #             # 获取Linux预计开启关闭的时间
+        #             print("预计开启Linux", ip_a)
+        #             tp.estimate_passwd(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        #     else:
+        #         pm.now_open(ip_a, server_type, pwd, v[1])  # 插入立即开放密码表
+        #         tp.now_delete(close_time, ip_a)  # 删除立即开放数据库密码表
+        #         # 获取密码关闭时间
+        #         now_end_day = (datetime.datetime.now() + datetime.timedelta(hours=v[1])).strftime("%Y-%m-%d")
+        #         now_end_time = (datetime.datetime.now() + datetime.timedelta(hours=v[1])).strftime("%H:%M")
+        #         if server_type == 2:
+        #             print("立即开启windows远程登录", ip_a)
+        #             tp.now_termservice(ip_a, now_end_day, now_end_time, pwd)
+        #         else:
+        #             print("立即开启Linux远程登录", ip_a, now_end_day, now_end_time, pwd)  # 修改密码同时开启远程登录
+        #             tp.now_passwd(ip_a, now_end_day, now_end_time, pwd)
+        # else:
+        #     close_time1 = datetime.datetime.strptime(end_close_time, '%Y-%m-%d %H:%M')  # 获取密码关闭时间
+        #     close_time = int(
+        #             (close_time1 - open_time).total_seconds())
+        #     if gain_time != " ":  # 判断是否设置预计开放的时间，gain_time不为空则开启预计开启远程登录，为空则立即开启远程登录
+        #         pm.est_passwd_manage(ip_a, area, pwd, gain_time)  # 更新密码保存数据库
+        #         # 数据库操作，加入预计开放数据库，到时间后删除预计开放，加入到立即开放表中，直到开放结束删除立即开放表中数据
+        #         estimateopasswd_time = int(
+        #             (open_time - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码开放时间
+        #         nowpasswd_time = int(
+        #             (close_time1 - datetime.datetime.now().replace(microsecond=0)).total_seconds())  # 当前时间到密码关闭时间
+        #         pm.estimate_open(ip_a, server_type, pwd, open_time, v[1])  # 插入预计开放密码表
+        #         tp.est_delete(estimateopasswd_time, ip_a)  # 删除预计开放数据库密码表
+        #         tp.now_create(estimateopasswd_time, ip_a, server_type, pwd, v[1])  # 插入立即开放数据库密码表
+        #         tp.now_delete(nowpasswd_time, ip_a)  # 删除立即开放数据库密码表
+        #         if server_type == 2:
+        #             print("预计开启windows", ip_a)
+        #             tp.estimate_termservice(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        #         else:
+        #             # 获取Linux预计开启关闭的时间
+        #             print("预计开启Linux", ip_a)
+        #             tp.estimate_passwd(ip_a, est_start_day, est_start_time, est_end_day, est_end_time, pwd)
+        #     else:
+        #         pm.now_open(ip_a, server_type, pwd, v[1])  # 插入立即开放密码表
+        #         tp.now_delete(close_time, ip_a)  # 删除立即开放数据库密码表
+        #         # 获取密码关闭时间
+        #         end_day = (datetime.datetime.now() + datetime.timedelta(hours=v[1])).strftime("%Y-%m-%d")
+        #         end_time = (datetime.datetime.now() + datetime.timedelta(hours=v[1])).strftime("%H:%M")
+        #         if server_type == 2:
+        #             print("立即开启windows远程登录", ip_a)
+        #             tp.now_termservice(ip_a, end_day, end_time, pwd)
+        #         else:
+        #             print("立即开启Linux远程登录", ip_a, end_day, end_time, pwd)  # 修改密码同时开启远程登录
+        #             tp.now_passwd(ip_a, end_day, end_time, pwd)

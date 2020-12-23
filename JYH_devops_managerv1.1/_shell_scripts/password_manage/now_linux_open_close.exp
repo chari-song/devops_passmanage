@@ -1,0 +1,31 @@
+#!/usr/bin/expect
+# 定义传入的参数
+# end_day为关闭远程登录服务器的日期
+# end_time为关闭远程登录服务器的时间
+# pwd为本次开启远程登录服务器的密码
+set user "root"
+set host [lindex $argv 0]
+set end_day [lindex $argv 1]
+set end_time [lindex $argv 2]
+set pwd [lindex $argv 3]
+spawn ssh -p 59135 $user@$host
+#expect "*yes/no*"
+#send "yes\r"
+# 立即启动linux服务器密码登录
+expect "*]#"
+send "sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config;systemctl restart sshd\r"
+
+# 修改登录密码
+expect "*]#"
+send "echo $pwd | passwd --stdin root\r"
+
+# 创建linux定时任务关闭密码登录服务
+expect "*]#"
+send "at $end_time $end_day <<EOF\r"
+expect ">"
+send "sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config;systemctl restart sshd\r"
+expect ">"
+send "EOF\r"
+expect "*]#"
+send "exit\r"
+interact

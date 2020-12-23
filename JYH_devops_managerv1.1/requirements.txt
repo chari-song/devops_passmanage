@@ -1,5 +1,5 @@
 -i https://pypi.tuna.tsinghua.edu.cn/simple/
-Django==2.1.8
+Django==2.2.13
 xlwt==1.3.0
 PyMySQL==0.9.3
 urllib3==1.22
